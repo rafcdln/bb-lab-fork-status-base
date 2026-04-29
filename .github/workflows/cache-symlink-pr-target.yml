@@ -1,0 +1,36 @@
+name: Cache Symlink PR Target
+
+on:
+  pull_request_target:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  save-symlink-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare symlink cache payload
+        shell: bash
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p bb-cache-symlink-safe/payload
+          ln -s ../bb-cache-symlink-escaped bb-cache-symlink-safe/link-out
+          {
+            printf 'event=%s\n' "$GITHUB_EVENT_NAME"
+            printf 'head_repo=%s\n' "$HEAD_REPO"
+            printf 'head_sha=%s\n' "$HEAD_SHA"
+          } > bb-cache-symlink-safe/payload/marker.txt
+          printf 'link_target=' && readlink bb-cache-symlink-safe/link-out
+          find bb-cache-symlink-safe -maxdepth 2 -ls
+
+      - name: Save symlink cache from pull_request_target
+        uses: actions/cache/save@v4
+        with:
+          path: bb-cache-symlink-safe
+          key: bb-lab-cache-symlink-fork-1

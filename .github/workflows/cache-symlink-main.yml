@@ -1,0 +1,38 @@
+name: Cache Symlink Main
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-symlink-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore symlink cache on main
+        id: restore-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: bb-cache-symlink-safe
+          key: bb-lab-cache-symlink-fork-1
+
+      - name: Inspect restored symlink cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "cache_hit=${{ steps.restore-cache.outputs.cache-hit }}"
+          echo "workspace=$GITHUB_WORKSPACE"
+          find bb-cache-symlink-safe -maxdepth 3 -ls || true
+          if [ -L bb-cache-symlink-safe/link-out ]; then
+            printf 'restored_link_target=' && readlink bb-cache-symlink-safe/link-out
+          else
+            echo 'restored_link_absent_or_not_symlink=true'
+          fi
+          if [ -e bb-cache-symlink-escaped/marker.txt ]; then
+            echo 'escaped_marker_present=true'
+            sha256sum bb-cache-symlink-escaped/marker.txt
+            sed -n '1,20p' bb-cache-symlink-escaped/marker.txt
+          else
+            echo 'escaped_marker_present=false'
+          fi
