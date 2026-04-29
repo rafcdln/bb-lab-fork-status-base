@@ -15,7 +15,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .bb-cache-pr-target
-          key: bb-lab-fixed-cache-pr-target
+          key: bb-lab-fixed-cache-pr-target-fork-1
 
       - name: Report restored pull_request_target marker
         shell: bash
