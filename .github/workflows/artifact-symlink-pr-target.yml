@@ -1,0 +1,36 @@
+name: Artifact Symlink PR Target
+
+on:
+  pull_request_target:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  upload-symlink-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare symlink artifact payload
+        shell: bash
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p bb-artifact-symlink-safe/payload
+          ln -s ../bb-artifact-symlink-escaped bb-artifact-symlink-safe/link-out
+          {
+            printf 'event=%s\n' "$GITHUB_EVENT_NAME"
+            printf 'head_repo=%s\n' "$HEAD_REPO"
+            printf 'head_sha=%s\n' "$HEAD_SHA"
+          } > bb-artifact-symlink-safe/payload/marker.txt
+          printf 'link_target=' && readlink bb-artifact-symlink-safe/link-out
+          find bb-artifact-symlink-safe -maxdepth 2 -ls
+
+      - name: Upload symlink artifact from pull_request_target
+        uses: actions/upload-artifact@v4
+        with:
+          name: bb-lab-artifact-symlink-fork-1
+          path: bb-artifact-symlink-safe

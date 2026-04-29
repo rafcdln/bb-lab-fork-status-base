@@ -1,0 +1,44 @@
+name: Artifact Symlink Workflow Run
+
+on:
+  workflow_run:
+    workflows:
+      - Artifact Symlink PR Target
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect-symlink-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download symlink artifact from triggering run
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          name: bb-lab-artifact-symlink-fork-1
+          path: bb-artifact-downloaded-safe
+
+      - name: Inspect downloaded symlink artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "trigger_run=${{ github.event.workflow_run.id }}"
+          echo "workspace=$GITHUB_WORKSPACE"
+          find bb-artifact-downloaded-safe -maxdepth 3 -ls || true
+          if [ -L bb-artifact-downloaded-safe/link-out ]; then
+            printf 'downloaded_link_target=' && readlink bb-artifact-downloaded-safe/link-out
+          else
+            echo 'downloaded_link_absent_or_not_symlink=true'
+          fi
+          if [ -e bb-artifact-symlink-escaped/marker.txt ]; then
+            echo 'escaped_marker_present=true'
+            sha256sum bb-artifact-symlink-escaped/marker.txt
+            sed -n '1,20p' bb-artifact-symlink-escaped/marker.txt
+          else
+            echo 'escaped_marker_present=false'
+          fi
