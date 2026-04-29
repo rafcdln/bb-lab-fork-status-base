@@ -1,0 +1,39 @@
+name: Cache Boundary PR Target
+
+on:
+  pull_request_target:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  save-pr-target-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare pull_request_target cache marker
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p .bb-cache-pr-target
+          {
+            printf 'event=%s\n' "$GITHUB_EVENT_NAME"
+            printf 'repository=%s\n' "$GITHUB_REPOSITORY"
+            printf 'ref=%s\n' "$GITHUB_REF"
+            printf 'sha=%s\n' "$GITHUB_SHA"
+            printf 'head_ref=%s\n' "$HEAD_REF"
+            printf 'head_repo=%s\n' "$HEAD_REPO"
+            printf 'head_sha=%s\n' "$HEAD_SHA"
+          } > .bb-cache-pr-target/marker.txt
+          sha256sum .bb-cache-pr-target/marker.txt
+
+      - name: Save fixed-key cache from pull_request_target
+        uses: actions/cache/save@v4
+        with:
+          path: .bb-cache-pr-target
+          key: bb-lab-fixed-cache-pr-target

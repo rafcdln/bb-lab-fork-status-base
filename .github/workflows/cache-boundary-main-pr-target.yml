@@ -1,0 +1,30 @@
+name: Cache Boundary Main PR Target
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-pr-target-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore pull_request_target fixed-key cache on main
+        id: restore-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .bb-cache-pr-target
+          key: bb-lab-fixed-cache-pr-target
+
+      - name: Report restored pull_request_target marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "cache_hit=${{ steps.restore-cache.outputs.cache-hit }}"
+          if [ -f .bb-cache-pr-target/marker.txt ]; then
+            sha256sum .bb-cache-pr-target/marker.txt
+            sed -n '1,20p' .bb-cache-pr-target/marker.txt
+          else
+            echo "marker_absent=true"
+          fi

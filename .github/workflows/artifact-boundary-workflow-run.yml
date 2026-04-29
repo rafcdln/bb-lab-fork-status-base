@@ -1,0 +1,30 @@
+name: Artifact Boundary Workflow Run
+
+on:
+  workflow_run:
+    workflows:
+      - Artifact Boundary PR Target
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect-trigger-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts from triggering run
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          name: bb-lab-fixed-artifact-pr-target
+          path: .bb-downloaded-artifact
+
+      - name: Report artifact marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          find .bb-downloaded-artifact -maxdepth 3 -type f -print -exec sha256sum {} \; -exec sed -n '1,20p' {} \;

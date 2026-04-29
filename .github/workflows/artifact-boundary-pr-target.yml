@@ -1,0 +1,38 @@
+name: Artifact Boundary PR Target
+
+on:
+  pull_request_target:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  upload-pr-target-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare artifact marker
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p .bb-artifact-pr-target
+          {
+            printf 'event=%s\n' "$GITHUB_EVENT_NAME"
+            printf 'repository=%s\n' "$GITHUB_REPOSITORY"
+            printf 'ref=%s\n' "$GITHUB_REF"
+            printf 'sha=%s\n' "$GITHUB_SHA"
+            printf 'head_ref=%s\n' "$HEAD_REF"
+            printf 'head_repo=%s\n' "$HEAD_REPO"
+            printf 'head_sha=%s\n' "$HEAD_SHA"
+          } > .bb-artifact-pr-target/marker.txt
+
+      - name: Upload fixed-name artifact from pull_request_target
+        uses: actions/upload-artifact@v4
+        with:
+          name: bb-lab-fixed-artifact-pr-target
+          path: .bb-artifact-pr-target
