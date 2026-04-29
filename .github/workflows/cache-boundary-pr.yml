@@ -1,0 +1,27 @@
+name: Cache Boundary PR
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  save-pr-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare cache marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .bb-cache-boundary
+          printf 'fork_pr_cache_marker=%s\n' "${GITHUB_HEAD_REF:-unknown}" > .bb-cache-boundary/marker.txt
+          printf 'event=%s\nrepo=%s\nref=%s\nsha=%s\n' "$GITHUB_EVENT_NAME" "$GITHUB_REPOSITORY" "$GITHUB_REF" "$GITHUB_SHA"
+
+      - name: Save fixed-key cache from PR
+        uses: actions/cache/save@v4
+        with:
+          path: .bb-cache-boundary
+          key: bb-lab-fixed-cache-boundary

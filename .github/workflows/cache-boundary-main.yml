@@ -1,0 +1,30 @@
+name: Cache Boundary Main
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-main-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore fixed-key cache on main
+        id: restore-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .bb-cache-boundary
+          key: bb-lab-fixed-cache-boundary
+
+      - name: Report restored marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "cache_hit=${{ steps.restore-cache.outputs.cache-hit }}"
+          if [ -f .bb-cache-boundary/marker.txt ]; then
+            sha256sum .bb-cache-boundary/marker.txt
+            sed -n '1,10p' .bb-cache-boundary/marker.txt
+          else
+            echo "marker_absent=true"
+          fi
